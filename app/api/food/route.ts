@@ -1,10 +1,9 @@
 import { db } from '@/lib/db'
 import { getUserFromRequest } from '@/lib/getUserFromRequest'
-import { ROLE } from '@/utils/constants'
 import { NextResponse } from 'next/server'
 
 export async function GET(req: Request) {
-	const { userId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 	const { searchParams } = new URL(req.url)
 	const fridgeId = searchParams.get('fridgeId')
 
@@ -20,18 +19,14 @@ export async function GET(req: Request) {
         OR f.family_group_id = u.family_group_id
       )
     `,
-		[userId, fridgeId]
+		[auth?.userId, fridgeId]
 	)
 
 	return NextResponse.json(rows)
 }
 
 export async function POST(req: Request) {
-	const { userId, roleId } = await getUserFromRequest()
-	if (roleId === ROLE.VIEWER)
-		return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-	const { name, quantity, fridgeId, expirationDate } = await req.json()
+	const { name, quantity, fridgeId, expiration_date } = await req.json()
 
 	const { rows } = await db.query(
 		`
@@ -39,37 +34,30 @@ export async function POST(req: Request) {
     VALUES ($1, $2, $3, $4)
     RETURNING *
     `,
-		[name, quantity, fridgeId, expirationDate]
+		[name, quantity, fridgeId, expiration_date]
 	)
 
 	return NextResponse.json(rows[0])
 }
 
 export async function PUT(req: Request) {
-	const { roleId } = await getUserFromRequest()
-	if (roleId === ROLE.VIEWER)
-		return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
-	const { foodId, quantity, expirationDate } = await req.json()
+	const { id, quantity, name, expiration_date } = await req.json()
 
 	await db.query(
 		`
     UPDATE foods
-    SET quantity = $1,
-        expiration_date = $2
-    WHERE id = $3
+    SET name = $1,
+        quantity = $2,
+        expiration_date = $3
+    WHERE id = $4
     `,
-		[quantity, expirationDate, foodId]
+		[name, quantity, expiration_date, id]
 	)
 
 	return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(req: Request) {
-	const { roleId } = await getUserFromRequest()
-	if (roleId === ROLE.VIEWER)
-		return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
 	const { foodId } = await req.json()
 
 	await db.query(`DELETE FROM foods WHERE id = $1`, [foodId])

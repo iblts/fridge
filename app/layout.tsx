@@ -1,8 +1,10 @@
 'use client'
 
+import { Header } from '@/components/Header'
 import MeProvider from '@/components/MeProvider'
 import QueryProvider from '@/components/QueryProvider'
 import { Montserrat } from 'next/font/google'
+import './globals.css'
 
 const montserratFont = Montserrat({
 	subsets: ['latin', 'cyrillic'],
@@ -15,6 +17,7 @@ export default function AppLayout({ children }: React.PropsWithChildren) {
 		<html lang='ru'>
 			<body className={`${montserratFont.className} antialiased`}>
 				<QueryProvider>
+					<Header />
 					<MeProvider>{children}</MeProvider>
 				</QueryProvider>
 			</body>

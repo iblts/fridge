@@ -4,7 +4,7 @@ import { ROLE } from '@/utils/constants'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-	const { userId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 
 	const { rows } = await db.query(
 		`
@@ -13,14 +13,14 @@ export async function GET() {
     JOIN users u ON u.family_group_id = fg.id
     WHERE u.id = $1
     `,
-		[userId]
+		[auth?.userId]
 	)
 
 	return NextResponse.json(rows[0] ?? null)
 }
 
 export async function POST(req: Request) {
-	const { userId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 	const { name } = await req.json()
 
 	const client = await db.connect()
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
           role_id = $2
       WHERE id = $3
       `,
-			[rows[0].id, ROLE.ADMIN, userId]
+			[rows[0].id, ROLE.ADMIN, auth?.userId]
 		)
 
 		await client.query('COMMIT')

@@ -3,7 +3,7 @@ import { getUserFromRequest } from '@/lib/getUserFromRequest'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-	const { userId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 
 	const { rows } = await db.query(
 		`
@@ -17,14 +17,14 @@ export async function GET() {
         AND f.family_group_id = u.family_group_id
       )
     `,
-		[userId]
+		[auth?.userId]
 	)
 
 	return NextResponse.json(rows)
 }
 
 export async function POST(req: Request) {
-	const { userId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 	const { name } = await req.json()
 
 	const { rows } = await db.query(
@@ -33,14 +33,14 @@ export async function POST(req: Request) {
     VALUES ($1, $2)
     RETURNING *
     `,
-		[name, userId]
+		[name, auth?.userId]
 	)
 
 	return NextResponse.json(rows[0])
 }
 
 export async function PUT(req: Request) {
-	const { userId, roleId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 	const { fridgeId, name } = await req.json()
 
 	const { rowCount } = await db.query(
@@ -50,7 +50,7 @@ export async function PUT(req: Request) {
     WHERE id = $2
       AND (creator_id = $3 OR $4 = 1)
     `,
-		[name, fridgeId, userId, roleId]
+		[name, fridgeId, auth?.userId, auth?.roleId]
 	)
 
 	if (!rowCount)
@@ -60,7 +60,7 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-	const { userId, roleId } = await getUserFromRequest()
+	const auth = await getUserFromRequest()
 	const { fridgeId } = await req.json()
 
 	const { rowCount } = await db.query(
@@ -69,7 +69,7 @@ export async function DELETE(req: Request) {
     WHERE id = $1
       AND (creator_id = $2 OR $3 = 1)
     `,
-		[fridgeId, userId, roleId]
+		[fridgeId, auth?.userId, auth?.roleId]
 	)
 
 	if (!rowCount)
