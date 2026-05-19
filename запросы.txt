@@ -1,0 +1,247 @@
+1. Создание основных таблиц
+sql
+-- 1.1 Таблица ролей
+CREATE TABLE roles (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+-- 1.2 Таблица семейных групп
+CREATE TABLE family_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL
+);
+
+-- 1.3 Таблица пользователей
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  family_group_id UUID REFERENCES family_groups(id) ON DELETE SET NULL,
+  role_id INT NOT NULL DEFAULT 3 REFERENCES roles(id),
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 1.4 Таблица холодильников
+CREATE TABLE fridges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  creator_id UUID NOT NULL REFERENCES users(id),
+  family_group_id UUID REFERENCES family_groups(id) ON DELETE SET NULL
+);
+
+-- 1.5 Таблица единиц измерения
+CREATE TABLE units (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  symbol TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 1.6 Таблица категорий
+CREATE TABLE categories (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  unit_id INT REFERENCES units(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 1.7 Таблица справочника продуктов
+CREATE TABLE product_directory (
+  foods_id SERIAL PRIMARY KEY,
+  foods_name VARCHAR(100) NOT NULL UNIQUE,
+  category VARCHAR(50),
+  category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+  unit_id INT REFERENCES units(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1.8 Таблица продуктов в холодильниках
+CREATE TABLE foods (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  quantity INT NOT NULL CHECK (quantity >= 0),
+  fridge_id UUID NOT NULL REFERENCES fridges(id) ON DELETE CASCADE,
+  expiration_date DATE,
+  unit_symbol TEXT NOT NULL DEFAULT 'шт',
+  unit_id INT REFERENCES units(id) ON DELETE SET NULL,
+  category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 1.9 Таблица журналов
+CREATE TABLE journals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+-- 1.10 Таблица логов действий
+CREATE TABLE food_logs (
+  id SERIAL PRIMARY KEY,
+  action_type TEXT NOT NULL CHECK (action_type IN ('add', 'remove', 'move')),
+  product_name TEXT NOT NULL,
+  quantity DECIMAL(10, 2) NOT NULL,
+  unit_symbol TEXT NOT NULL,
+  from_fridge_id UUID REFERENCES fridges(id) ON DELETE SET NULL,
+  to_fridge_id UUID REFERENCES fridges(id) ON DELETE SET NULL,
+  user_id UUID NOT NULL REFERENCES users(id),
+  user_name TEXT NOT NULL,
+  fridge_name TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+2. Создание индексов для оптимизации
+sql
+-- Индексы для таблицы foods
+CREATE INDEX IF NOT EXISTS idx_foods_category_id ON foods(category_id);
+CREATE INDEX IF NOT EXISTS idx_foods_fridge_id ON foods(fridge_id);
+CREATE INDEX IF NOT EXISTS idx_foods_created_at ON foods(created_at);
+
+-- Индексы для таблицы food_logs
+CREATE INDEX idx_food_logs_user_id ON food_logs(user_id);
+CREATE INDEX idx_food_logs_fridge_id ON food_logs(from_fridge_id);
+CREATE INDEX idx_food_logs_created_at ON food_logs(created_at);
+CREATE INDEX idx_food_logs_action_type ON food_logs(action_type);
+
+-- Индексы для таблицы journals
+CREATE INDEX idx_journals_user_id ON journals(user_id);
+
+3. Создание триггера для обновления updated_at
+sql
+-- Функция для автоматического обновления updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Триггер для таблицы journals
+CREATE TRIGGER update_journals_updated_at
+  BEFORE UPDATE ON journals
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+4. Начальное заполнение данных
+sql
+-- 4.1 Роли
+INSERT INTO roles (name) VALUES ('admin'), ('editor'), ('viewer')
+ON CONFLICT (name) DO NOTHING;
+
+-- 4.2 Единицы измерения
+INSERT INTO units (name, symbol) VALUES 
+('штука', 'шт'),
+('литр', 'л'),
+('миллилитр', 'мл'),
+('грамм', 'г'),
+('килограмм', 'кг')
+ON CONFLICT (name) DO NOTHING;
+
+-- 4.3 Категории
+INSERT INTO categories (name, unit_id) VALUES 
+('Молочные продукты', (SELECT id FROM units WHERE symbol = 'л')),
+('Мясные продукты', (SELECT id FROM units WHERE symbol = 'кг')),
+('Хлебобулочные изделия', (SELECT id FROM units WHERE symbol = 'шт')),
+('Овощи', (SELECT id FROM units WHERE symbol = 'кг')),
+('Фрукты', (SELECT id FROM units WHERE symbol = 'кг')),
+('Напитки', (SELECT id FROM units WHERE symbol = 'л')),
+('Соусы', (SELECT id FROM units WHERE symbol = 'мл')),
+('Сладости', (SELECT id FROM units WHERE symbol = 'г')),
+('Прочее', (SELECT id FROM units WHERE symbol = 'шт'))
+ON CONFLICT (name) DO NOTHING;
+
+-- 4.4 Справочник продуктов
+INSERT INTO product_directory (foods_name, category_id) VALUES
+-- Молочные продукты
+('Молоко', (SELECT id FROM categories WHERE name = 'Молочные продукты')),
+('Кефир', (SELECT id FROM categories WHERE name = 'Молочные продукты')),
+('Йогурт', (SELECT id FROM categories WHERE name = 'Молочные продукты')),
+('Сметана', (SELECT id FROM categories WHERE name = 'Молочные продукты')),
+('Творог', (SELECT id FROM categories WHERE name = 'Молочные продукты')),
+('Сыр', (SELECT id FROM categories WHERE name = 'Молочные продукты')),
+('Масло сливочное', (SELECT id FROM categories WHERE name = 'Молочные products')),
+-- Прочее
+('Яйца', (SELECT id FROM categories WHERE name = 'Прочее')),
+-- Мясные продукты
+('Колбаса', (SELECT id FROM categories WHERE name = 'Мясные продукты')),
+('Сосиски', (SELECT id FROM categories WHERE name = 'Мясные продукты')),
+('Ветчина', (SELECT id FROM categories WHERE name = 'Мясные продукты')),
+('Курица', (SELECT id FROM categories WHERE name = 'Мясные продукты')),
+-- Хлебобулочные
+('Хлеб', (SELECT id FROM categories WHERE name = 'Хлебобулочные изделия')),
+('Булочка', (SELECT id FROM categories WHERE name = 'Хлебобулочные изделия')),
+-- Овощи
+('Помидоры', (SELECT id FROM categories WHERE name = 'Овощи')),
+('Огурцы', (SELECT id FROM categories WHERE name = 'Овощи')),
+('Перец', (SELECT id FROM categories WHERE name = 'Овощи')),
+('Лук', (SELECT id FROM categories WHERE name = 'Овощи')),
+('Картофель', (SELECT id FROM categories WHERE name = 'Овощи')),
+-- Фрукты
+('Яблоки', (SELECT id FROM categories WHERE name = 'Фрукты')),
+('Бананы', (SELECT id FROM categories WHERE name = 'Фрукты')),
+('Апельсины', (SELECT id FROM categories WHERE name = 'Фрукты')),
+-- Напитки
+('Сок', (SELECT id FROM categories WHERE name = 'Напитки')),
+('Вода', (SELECT id FROM categories WHERE name = 'Напитки')),
+('Газировка', (SELECT id FROM categories WHERE name = 'Напитки')),
+-- Соусы
+('Соус', (SELECT id FROM categories WHERE name = 'Соусы')),
+('Кетчуп', (SELECT id FROM categories WHERE name = 'Соусы')),
+('Майонез', (SELECT id FROM categories WHERE name = 'Соусы')),
+-- Сладости
+('Шоколад', (SELECT id FROM categories WHERE name = 'Сладости')),
+('Печенье', (SELECT id FROM categories WHERE name = 'Сладости')),
+('Торт', (SELECT id FROM categories WHERE name = 'Сладости'))
+ON CONFLICT (foods_name) DO NOTHING;
+
+-- 4.5 Обновление unit_id в справочнике продуктов
+UPDATE product_directory pd
+SET unit_id = c.unit_id
+FROM categories c
+WHERE pd.category_id = c.id;
+
+5. Полезные запросы для проверки
+sql
+-- Проверка структуры таблиц
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name IN ('foods', 'food_logs', 'journals')
+ORDER BY table_name, ordinal_position;
+
+-- Проверка созданных журналов для пользователя
+SELECT * FROM journals WHERE user_id = (SELECT id FROM users WHERE email = 'ваш_email');
+
+-- Проверка записей в логах
+SELECT * FROM food_logs ORDER BY created_at DESC LIMIT 10;
+
+-- Получить все продукты с категориями и единицами измерения
+SELECT 
+  f.id,
+  f.name,
+  f.quantity,
+  f.unit_symbol,
+  f.expiration_date,
+  c.name as category_name,
+  u.symbol as unit_symbol,
+  fr.name as fridge_name
+FROM foods f
+LEFT JOIN categories c ON f.category_id = c.id
+LEFT JOIN units u ON f.unit_id = u.id
+LEFT JOIN fridges fr ON f.fridge_id = fr.id
+ORDER BY f.created_at DESC;
+
+-- Получить справочник продуктов с категориями
+SELECT 
+  pd.foods_name,
+  c.name as category,
+  u.symbol as unit_symbol
+FROM product_directory pd
+LEFT JOIN categories c ON pd.category_id = c.id
+LEFT JOIN units u ON c.unit_id = u.id
+ORDER BY c.name, pd.foods_name;

@@ -1,10 +1,13 @@
-'use client'
-
 import { Header } from '@/components/Header'
 import MeProvider from '@/components/MeProvider'
 import QueryProvider from '@/components/QueryProvider'
+import { Metadata } from 'next'
 import { Montserrat } from 'next/font/google'
 import './globals.css'
+
+export const metadata: Metadata = {
+	title: 'СибЦем - холодильник',
+}
 
 const montserratFont = Montserrat({
 	subsets: ['latin', 'cyrillic'],

@@ -48,45 +48,45 @@ export default function RegisterPage() {
 		<main className='flex min-h-screen items-center justify-center'>
 			<form
 				onSubmit={handleSubmit(onSubmit)}
-				className='w-full max-w-sm space-y-4 rounded-xl border p-6'
+				className='w-full max-w-sm space-y-4 rounded-xl border border-stone-400 p-6 bg-stone-300'
 			>
 				<h1 className='text-xl font-semibold'>Регистрация</h1>
 
 				<input
 					{...register('name')}
 					placeholder='Имя'
-					className='w-full rounded border p-2'
+					className='w-full rounded border p-2 bg-stone-100 text-black border-stone-400 outline-0 focus-visible:border-stone-500'
 				/>
 				{errors.name && (
-					<p className='text-sm text-red-500'>{errors.name.message}</p>
+					<p className='text-sm text-red-800'>{errors.name.message}</p>
 				)}
 
 				<input
 					{...register('email')}
 					placeholder='Email'
-					className='w-full rounded border p-2'
+					className='w-full rounded border p-2 bg-stone-100 text-black border-stone-400 outline-0 focus-visible:border-stone-500'
 				/>
 				{errors.email && (
-					<p className='text-sm text-red-500'>{errors.email.message}</p>
+					<p className='text-sm text-red-800'>{errors.email.message}</p>
 				)}
 
 				<input
 					type='password'
 					{...register('password')}
 					placeholder='Пароль'
-					className='w-full rounded border p-2'
+					className='w-full rounded border p-2 bg-stone-100 text-black border-stone-400 outline-0 focus-visible:border-stone-500'
 				/>
 				{errors.password && (
-					<p className='text-sm text-red-500'>{errors.password.message}</p>
+					<p className='text-sm text-red-800'>{errors.password.message}</p>
 				)}
 
 				{errors.root && (
-					<p className='text-sm text-red-500'>{errors.root.message}</p>
+					<p className='text-sm text-red-800'>{errors.root.message}</p>
 				)}
 
 				<button
 					disabled={isSubmitting}
-					className='w-full rounded bg-black py-2 text-white disabled:opacity-50'
+					className='w-full rounded bg-red-900 py-2 text-white disabled:opacity-50 cursor-pointer hover:bg-red-800 transition-colors focus-visible:bg-red-800 outline-0'
 				>
 					Зарегистрироваться
 				</button>

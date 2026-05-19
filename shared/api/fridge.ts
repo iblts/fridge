@@ -58,3 +58,38 @@ export function useCreateFridge() {
 		},
 	})
 }
+
+export function useDeleteFridge() {
+	const qc = useQueryClient()
+
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const res = await fetch(`/api/fridge/${id}`, {
+				method: 'DELETE',
+			})
+			if (!res.ok) throw new Error()
+			return res.json() as Promise<{ success: boolean }>
+		},
+
+		onMutate: async name => {
+			await qc.cancelQueries({ queryKey: ['fridges'] })
+
+			const prev = qc.getQueryData<Fridge[]>(['fridges'])
+
+			qc.setQueryData(['fridges'], (old: Fridge[]) => [
+				...(old ?? []),
+				{ id: 'temp', name },
+			])
+
+			return { prev }
+		},
+
+		onError: (_, __, ctx) => {
+			qc.setQueryData(['fridges'], ctx?.prev)
+		},
+
+		onSettled: () => {
+			qc.invalidateQueries({ queryKey: ['fridges'] })
+		},
+	})
+}

@@ -1,66 +1,89 @@
-import { db } from '@/lib/db'
-import { getUserFromRequest } from '@/lib/getUserFromRequest'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
-export async function GET(req: Request) {
-	const auth = await getUserFromRequest()
-	const { searchParams } = new URL(req.url)
-	const fridgeId = searchParams.get('fridgeId')
-
-	const { rows } = await db.query(
-		`
-    SELECT fd.*
-    FROM foods fd
-    JOIN fridges f ON f.id = fd.fridge_id
-    JOIN users u ON u.id = $1
-    WHERE fd.fridge_id = $2
-      AND (
-        f.creator_id = $1
-        OR f.family_group_id = u.family_group_id
-      )
-    `,
-		[auth?.userId, fridgeId]
-	)
-
-	return NextResponse.json(rows)
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, quantity, fridgeId, expiration_date, unit_symbol } = body;
+    
+    const result = await db.query(
+      `INSERT INTO foods (name, quantity, fridge_id, expiration_date, unit_symbol) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING *`,
+      [name, quantity, fridgeId, expiration_date || null, unit_symbol || 'шт']
+    );
+    
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error adding food:', error);
+    return NextResponse.json({ error: 'Failed to add food' }, { status: 500 });
+  }
 }
 
-export async function POST(req: Request) {
-	const { name, quantity, fridgeId, expiration_date } = await req.json()
-
-	const { rows } = await db.query(
-		`
-    INSERT INTO foods (name, quantity, fridge_id, expiration_date)
-    VALUES ($1, $2, $3, $4)
-    RETURNING *
-    `,
-		[name, quantity, fridgeId, expiration_date]
-	)
-
-	return NextResponse.json(rows[0])
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const fridgeId = searchParams.get('fridgeId');
+    
+    if (!fridgeId) {
+      return NextResponse.json({ error: 'fridgeId is required' }, { status: 400 });
+    }
+    
+    const result = await db.query(
+      `SELECT * FROM foods WHERE fridge_id = $1 ORDER BY created_at DESC`,
+      [fridgeId]
+    );
+    
+    return NextResponse.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching foods:', error);
+    return NextResponse.json({ error: 'Failed to fetch foods' }, { status: 500 });
+  }
 }
 
-export async function PUT(req: Request) {
-	const { id, quantity, name, expiration_date } = await req.json()
-
-	await db.query(
-		`
-    UPDATE foods
-    SET name = $1,
-        quantity = $2,
-        expiration_date = $3
-    WHERE id = $4
-    `,
-		[name, quantity, expiration_date, id]
-	)
-
-	return NextResponse.json({ ok: true })
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, name, quantity, expiration_date } = body;
+    
+    const result = await db.query(
+      `UPDATE foods 
+       SET name = COALESCE($1, name), 
+           quantity = COALESCE($2, quantity), 
+           expiration_date = COALESCE($3, expiration_date)
+       WHERE id = $4
+       RETURNING *`,
+      [name, quantity, expiration_date, id]
+    );
+    
+    return NextResponse.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating food:', error);
+    return NextResponse.json({ error: 'Failed to update food' }, { status: 500 });
+  }
 }
 
-export async function DELETE(req: Request) {
-	const { foodId } = await req.json()
-
-	await db.query(`DELETE FROM foods WHERE id = $1`, [foodId])
-
-	return NextResponse.json({ ok: true })
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const foodId = searchParams.get('id');
+    
+    if (!foodId) {
+      return NextResponse.json({ error: 'Food id is required' }, { status: 400 });
+    }
+    
+    const result = await db.query(
+      `DELETE FROM foods WHERE id = $1 RETURNING *`,
+      [foodId]
+    );
+    
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Food not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ message: 'Food deleted successfully', food: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting food:', error);
+    return NextResponse.json({ error: 'Failed to delete food' }, { status: 500 });
+  }
 }

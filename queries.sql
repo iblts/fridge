@@ -35,3 +35,46 @@ CREATE TABLE foods (
   expiration_date DATE
 );
 
+CREATE TABLE product_directory (
+    foods_id SERIAL PRIMARY KEY,
+    foods_name VARCHAR(100) NOT NULL UNIQUE,
+    category VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE units (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  symbol TEXT NOT NULL UNIQUE,  -- сокращенное обозначение: шт, л, мл, г, кг
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  unit_id INT REFERENCES units(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE food_logs (
+  id SERIAL PRIMARY KEY,
+  action_type TEXT NOT NULL CHECK (action_type IN ('add', 'remove', 'move')),
+  product_name TEXT NOT NULL,
+  quantity DECIMAL(10, 2) NOT NULL,
+  unit_symbol TEXT NOT NULL,
+  from_fridge_id UUID REFERENCES fridges(id) ON DELETE SET NULL,
+  to_fridge_id UUID REFERENCES fridges(id) ON DELETE SET NULL,
+  user_id UUID NOT NULL REFERENCES users(id),
+  user_name TEXT NOT NULL,
+  fridge_name TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS journals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);

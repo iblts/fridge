@@ -7,15 +7,18 @@ export async function GET() {
 
 	const { rows } = await db.query(
 		`
-    SELECT f.*
+    SELECT f.*, COUNT(fo.id) AS food_count
     FROM fridges f
     JOIN users u ON u.id = $1
+		JOIN foods fo ON fo.fridge_id = f.id
     WHERE
       f.creator_id = $1
       OR (
         f.family_group_id IS NOT NULL
         AND f.family_group_id = u.family_group_id
       )
+		GROUP BY f.id
+		ORDER BY f.name
     `,
 		[auth?.userId]
 	)

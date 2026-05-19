@@ -26,3 +26,26 @@ export async function GET(
 
 	return NextResponse.json(rows[0])
 }
+
+export async function DELETE(
+	req: NextRequest,
+	{ params }: { params: Promise<{ id: string }> }
+) {
+	const auth = await getUserFromRequest()
+	const id = (await params).id
+	let creatorCondition = ''
+
+	if (!auth) {
+		return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+	}
+	if (auth.roleId !== 1) creatorCondition = 'AND f.creator_id = $1'
+
+	await db.query(
+		`
+			DELETE FROM fridges f WHERE f.id = $2 ${creatorCondition}
+    `,
+		[auth?.userId, id]
+	)
+
+	return NextResponse.json({ success: true })
+}

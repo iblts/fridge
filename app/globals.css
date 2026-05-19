@@ -1,26 +1,57 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+	--background: #e7e5e4;
+	--foreground: #212023;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background: var(--background);
+	color: var(--foreground);
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+.custom-select {
+	background-color: black;
+	color: white;
+	padding: 8px 12px;
+	border: 1px solid #333;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.custom-select option {
+	background-color: black;
+	color: white;
+}
+
+.custom-select:focus {
+	outline: none;
+	border-color: #666;
+}
+
+.custom-select:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+button:active {
+	transform: scale(0.98);
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+button:disabled {
+	cursor: not-allowed;
+}
+
+.react-datepicker__day--selected {
+	background-color: #82181a;
 }
