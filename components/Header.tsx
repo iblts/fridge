@@ -38,16 +38,18 @@ export const Header = () => {
 							<li>
 								<Link href='/login'>Войти</Link>
 							</li>
-							{/* <li>
-								<Link href='/register'>Регистрация</Link>
-							</li> */}
 						</>
 					)}
 
 					{user && user.role === 'admin' && (
-						<li>
-							<Link href='/register'>Зарегистрировать пользователя</Link>
-						</li>
+						<>
+							<li>
+								<Link href='/food'>Продукты</Link>
+							</li>
+							<li>
+								<Link href='/users'>Пользователи</Link>
+							</li>
+						</>
 					)}
 					{user && (
 						<li>

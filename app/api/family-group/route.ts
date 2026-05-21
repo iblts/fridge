@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { getUserFromRequest } from '@/lib/getUserFromRequest'
+import { getUserFromRequest } from '@/shared/api/getUserFromRequest'
 import { ROLE } from '@/utils/constants'
 import { NextResponse } from 'next/server'
 

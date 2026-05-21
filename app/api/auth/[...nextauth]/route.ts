@@ -52,14 +52,13 @@ const handler = NextAuth({
 	],
 	session: {
 		strategy: 'jwt',
-		maxAge: 30 * 24 * 60 * 60, // 30 days
+		maxAge: 30 * 24 * 60 * 60,
 	},
 	jwt: {
-		maxAge: 30 * 24 * 60 * 60, // 30 days
+		maxAge: 30 * 24 * 60 * 60,
 	},
 	callbacks: {
 		async jwt({ token, user }) {
-			// При первом входе добавляем id и role_id в токен
 			if (user) {
 				token.id = user.id
 				token.role_id = user.role_id
@@ -67,7 +66,6 @@ const handler = NextAuth({
 			return token
 		},
 		async session({ session, token }) {
-			// Добавляем id и role_id из токена в сессию
 			if (session.user) {
 				session.user.id = token.id as string
 				session.user.role_id = token.role_id as number

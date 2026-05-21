@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { getUserFromRequest } from '@/lib/getUserFromRequest'
+import { getUserFromRequest } from '@/shared/api/getUserFromRequest'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -36,7 +36,7 @@ export async function GET() {
 			id: user.id,
 			name: user.name,
 			email: user.email,
-			role: user.role // уже приходит как 'admin', 'editor' или 'viewer' из JOIN
+			role: user.role
 		})
 	} catch (error) {
 		console.error('Error fetching user:', error)

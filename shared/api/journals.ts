@@ -23,7 +23,6 @@ export interface FoodLog {
   created_at: string;
 }
 
-// Получить журналы пользователя
 export function useJournals(userId: string) {
   return useQuery<Journal[]>({
     queryKey: ['journals', userId],
@@ -36,7 +35,6 @@ export function useJournals(userId: string) {
   });
 }
 
-// Получить записи конкретного журнала
 export function useJournalLogs(journalId: string) {
   return useQuery<FoodLog[]>({
     queryKey: ['journals', journalId, 'logs'],
@@ -49,7 +47,6 @@ export function useJournalLogs(journalId: string) {
   });
 }
 
-// Создать журналы для нового пользователя
 export function useCreateUserJournals() {
   const qc = useQueryClient();
   
@@ -69,7 +66,6 @@ export function useCreateUserJournals() {
   });
 }
 
-// Записать действие в журнал
 export function useAddFoodLog() {
   return useMutation({
     mutationFn: async (data: Omit<FoodLog, 'id' | 'created_at'>) => {

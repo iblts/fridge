@@ -12,7 +12,6 @@ export interface FoodLog {
   fridge_name: string | null;
 }
 
-// Записать действие в журнал
 export function useAddFoodLog() {
   return useMutation({
     mutationFn: async (data: FoodLog) => {

@@ -5,17 +5,14 @@ export function useCurrentUser() {
   const { user, setUser } = useAuthStore();
 
   useEffect(() => {
-    // Загружаем пользователя из localStorage или API
     const loadUser = async () => {
       try {
-        // Пробуем получить из localStorage
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
           return;
         }
 
-        // Если нет в localStorage, пробуем получить из API
         const res = await fetch('/api/me');
         if (res.ok) {
           const userData = await res.json();

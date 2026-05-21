@@ -37,3 +37,23 @@ export interface Food {
 	expiration_date?: string
 	unit_symbol?: string
 }
+
+export interface Need {
+	need_id: number
+	foods_id: number
+	foods_name: string
+	unit_id: number | null
+	unit_name: string | null
+	unit_symbol: string | null
+	count: number
+	done: boolean
+}
+
+export interface User {
+	id: string
+	name: string
+	email: string
+	role_id: number
+	role: 'admin' | 'editor' | 'viewer'
+	created_at: string
+}

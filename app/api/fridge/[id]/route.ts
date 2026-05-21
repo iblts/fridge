@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'
-import { getUserFromRequest } from '@/lib/getUserFromRequest'
+import { getUserFromRequest } from '@/shared/api/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
